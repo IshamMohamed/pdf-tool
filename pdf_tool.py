@@ -4,9 +4,6 @@ Batch rasterize-and-compress PDFs:
 - Reads all .pdf files under "Original" (recursively)
 - Rasterizes pages at specified DPI, compresses as JPEG
 - Reassembles into a PDF and saves into "Low" preserving directory structure
-
-Dependencies:
-    pip install pymupdf pillow img2pdf
 """
 
 import argparse
