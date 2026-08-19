@@ -2,7 +2,7 @@
 
 import os
 import logging
-from typing import List, Dict, Any, Optional
+from typing import List, Optional
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO)
