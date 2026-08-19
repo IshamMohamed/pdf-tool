@@ -1,4 +1,3 @@
-# utils.py - Utility functions for PDF Tool
 # This file contains helper functions that can be used across the project
 
 import os
@@ -13,10 +12,10 @@ logger = logging.getLogger(__name__)
 def ensure_directory_exists(directory_path: str) -> bool:
     """
     Ensure that a directory exists, create it if it doesn't.
-    
+
     Args:
         directory_path: Path to the directory to check/create
-        
+
     Returns:
         True if directory exists or was created successfully, False otherwise
     """
@@ -32,11 +31,11 @@ def ensure_directory_exists(directory_path: str) -> bool:
 def list_files_in_directory(directory_path: str, extension: str = None) -> List[str]:
     """
     List all files in a directory, optionally filtered by extension.
-    
+
     Args:
         directory_path: Path to the directory to list
         extension: Optional file extension filter (e.g., '.pdf')
-        
+
     Returns:
         List of file paths
     """
@@ -44,17 +43,17 @@ def list_files_in_directory(directory_path: str, extension: str = None) -> List[
         if not os.path.exists(directory_path):
             logger.warning(f"Directory does not exist: {directory_path}")
             return []
-        
+
         files = []
         for filename in os.listdir(directory_path):
             file_path = os.path.join(directory_path, filename)
             if os.path.isfile(file_path):
                 if extension is None or filename.endswith(extension):
                     files.append(file_path)
-        
+
         logger.info(f"Found {len(files)} files in {directory_path}")
         return files
-        
+
     except Exception as e:
         logger.error(f"Error listing files in {directory_path}: {e}")
         return []
@@ -63,10 +62,10 @@ def list_files_in_directory(directory_path: str, extension: str = None) -> List[
 def read_file_contents(file_path: str) -> Optional[str]:
     """
     Read the contents of a file as a string.
-    
+
     Args:
         file_path: Path to the file to read
-        
+
     Returns:
         File contents as string, or None if error occurs
     """
@@ -83,11 +82,11 @@ def read_file_contents(file_path: str) -> Optional[str]:
 def write_file_contents(file_path: str, content: str) -> bool:
     """
     Write content to a file.
-    
+
     Args:
         file_path: Path to the file to write
         content: Content to write to the file
-        
+
     Returns:
         True if write was successful, False otherwise
     """
@@ -104,10 +103,10 @@ def write_file_contents(file_path: str, content: str) -> bool:
 def get_file_extension(filename: str) -> str:
     """
     Get the file extension from a filename.
-    
+
     Args:
         filename: The filename to extract extension from
-        
+
     Returns:
         The file extension including the dot (e.g., '.pdf'),
         or empty string if no extension
@@ -123,10 +122,10 @@ def get_file_extension(filename: str) -> str:
 def get_file_size(file_path: str) -> Optional[int]:
     """
     Get the size of a file in bytes.
-    
+
     Args:
         file_path: Path to the file
-        
+
     Returns:
         File size in bytes, or None if error occurs
     """
@@ -142,10 +141,10 @@ def get_file_size(file_path: str) -> Optional[int]:
 def validate_pdf_file(file_path: str) -> bool:
     """
     Basic validation to check if a file appears to be a PDF.
-    
+
     Args:
         file_path: Path to the file to validate
-        
+
     Returns:
         True if file exists and has .pdf extension, False otherwise
     """
@@ -153,17 +152,17 @@ def validate_pdf_file(file_path: str) -> bool:
         if not os.path.exists(file_path):
             logger.warning(f"File does not exist: {file_path}")
             return False
-        
+
         if get_file_extension(file_path) != '.pdf':
             logger.warning(f"File is not a PDF: {file_path}")
             return False
-            
+
         # Additional validation could be added here
         # (e.g., checking magic number, file structure)
-        
+
         logger.info(f"PDF file validated: {file_path}")
         return True
-        
+
     except Exception as e:
         logger.error(f"Error validating PDF file {file_path}: {e}")
         return False
@@ -172,10 +171,10 @@ def validate_pdf_file(file_path: str) -> bool:
 def get_filename_without_extension(file_path: str) -> str:
     """
     Get the filename without its extension.
-    
+
     Args:
         file_path: Full path to the file
-        
+
     Returns:
         Filename without extension
     """
@@ -190,29 +189,29 @@ def get_filename_without_extension(file_path: str) -> str:
 def create_backup_file(original_path: str, backup_suffix: str = ".backup") -> Optional[str]:
     """
     Create a backup copy of a file.
-    
+
     Args:
         original_path: Path to the original file
         backup_suffix: Suffix to add to the backup filename
-        
+
     Returns:
         Path to the backup file, or None if error occurs
     """
     try:
         backup_path = original_path + backup_suffix
-        
+
         # Read original file
         content = read_file_contents(original_path)
         if content is None:
             return None
-            
+
         # Write backup file
         if write_file_contents(backup_path, content):
             logger.info(f"Backup created: {backup_path}")
             return backup_path
         else:
             return None
-            
+
     except Exception as e:
         logger.error(f"Error creating backup of {original_path}: {e}")
         return None
