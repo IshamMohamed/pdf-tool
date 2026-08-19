@@ -1,0 +1,6 @@
+# PDF Tool dependencies
+# For pdf_lower.py and related utilities
+
+pymupdf>=1.22.0  # PyMuPDF for PDF processing
+Pillow>=9.0.0     # PIL for image manipulation
+img2pdf>=0.4.0    # For converting images to PDF
