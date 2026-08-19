@@ -13,6 +13,7 @@ import os
 import shutil
 import sys
 import tempfile
+import traceback
 from pathlib import Path
 from typing import Optional, Union
 
@@ -60,7 +61,8 @@ def compress_pdf_rasterize(
     try:
         doc = fitz.open(str(input_path))
     except (fitz.FileDataError, fitz.FileNotFoundError, RuntimeError) as e:
-        logger.exception(f"Failed to open PDF {input_path}: {e}")
+        logger.error(f"Failed to open PDF {input_path}: {e}")
+        logger.debug(traceback.format_exc())
         return False
 
     assert doc is not None, "Document should be initialized"
@@ -85,6 +87,7 @@ def compress_pdf_rasterize(
                 f"({img_path.stat().st_size // 1024} KB)"
             )
 
+        try:
         # Convert compressed JPEG images into a single PDF
         pdf_bytes = img2pdf.convert(images)
         if pdf_bytes is None:
@@ -93,6 +96,10 @@ def compress_pdf_rasterize(
 
         with open(output_path, "wb") as f:
             f.write(pdf_bytes)
+    except (img2pdf.ImageOpenError, OSError) as e:
+        logger.error(f"Failed to write PDF {output_path}: {e}")
+        logger.debug(traceback.format_exc())
+        return False
 
         orig_size = input_path.stat().st_size
         new_size = output_path.stat().st_size
@@ -103,7 +110,8 @@ def compress_pdf_rasterize(
         return True
 
     except (RuntimeError, OSError, img2pdf.ImageOpenError) as e:
-        logger.exception(f"Failed processing {input_path}: {e}")
+        logger.error(f"Failed processing {input_path}: {e}")
+        logger.debug(traceback.format_exc())
         return False
 
     finally:
@@ -162,7 +170,8 @@ def process_directory(
                     src, dst, dpi=dpi, jpeg_quality=jpeg_quality, overwrite=overwrite
                 )
             except (RuntimeError, OSError) as e:
-                logger.exception(f"Unhandled error while processing {src}: {e}")
+                logger.error(f"Unhandled error while processing {src}: {e}")
+                logger.debug(traceback.format_exc())
 
         if not recursive:
             break
@@ -215,7 +224,8 @@ def main() -> None:
         )
         logger.info("Batch processing finished.")
     except (RuntimeError, OSError, SystemExit) as e:
-        logger.exception(f"Fatal error: {e}")
+        logger.error(f"Fatal error: {e}")
+        logger.debug(traceback.format_exc())
         sys.exit(1)
 
 

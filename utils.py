@@ -2,11 +2,13 @@
 
 import os
 import logging
-from typing import List, Optional
+import traceback
+from typing import List, Optional, Any
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+logger.propagate = False  # Avoid duplicate logs if root logger is configured
 
 
 def ensure_directory_exists(directory_path: str) -> bool:
@@ -21,10 +23,15 @@ def ensure_directory_exists(directory_path: str) -> bool:
     """
     try:
         os.makedirs(directory_path, exist_ok=True)
-        logger.info(f"Directory ensured: {directory_path}")
+        logger.debug(f"Directory ensured: {directory_path}")
         return True
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Failed to create directory {directory_path}: {e}")
+        logger.debug(traceback.format_exc())
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error while creating directory {directory_path}: {e}")
+        logger.debug(traceback.format_exc())
         return False
 
 
@@ -51,11 +58,16 @@ def list_files_in_directory(directory_path: str, extension: str = None) -> List[
                 if extension is None or filename.endswith(extension):
                     files.append(file_path)
 
-        logger.info(f"Found {len(files)} files in {directory_path}")
+        logger.debug(f"Found {len(files)} files in {directory_path}")
         return files
 
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Error listing files in {directory_path}: {e}")
+        logger.debug(traceback.format_exc())
+        return []
+    except Exception as e:
+        logger.error(f"Unexpected error while listing files in {directory_path}: {e}")
+        logger.debug(traceback.format_exc())
         return []
 
 
@@ -72,10 +84,15 @@ def read_file_contents(file_path: str) -> Optional[str]:
     try:
         with open(file_path, 'r', encoding='utf-8') as file:
             content = file.read()
-        logger.info(f"Successfully read file: {file_path}")
+        logger.debug(f"Successfully read file: {file_path}")
         return content
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Error reading file {file_path}: {e}")
+        logger.debug(traceback.format_exc())
+        return None
+    except Exception as e:
+        logger.error(f"Unexpected error while reading file {file_path}: {e}")
+        logger.debug(traceback.format_exc())
         return None
 
 
@@ -93,10 +110,15 @@ def write_file_contents(file_path: str, content: str) -> bool:
     try:
         with open(file_path, 'w', encoding='utf-8') as file:
             file.write(content)
-        logger.info(f"Successfully wrote to file: {file_path}")
+        logger.debug(f"Successfully wrote to file: {file_path}")
         return True
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Error writing to file {file_path}: {e}")
+        logger.debug(traceback.format_exc())
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error while writing to file {file_path}: {e}")
+        logger.debug(traceback.format_exc())
         return False
 
 
@@ -116,6 +138,7 @@ def get_file_extension(filename: str) -> str:
         return ext.lower()
     except Exception as e:
         logger.error(f"Error getting extension from {filename}: {e}")
+        logger.debug(traceback.format_exc())
         return ""
 
 
@@ -130,11 +153,12 @@ def get_file_size(file_path: str) -> Optional[int]:
         File size in bytes, or None if error occurs
     """
     try:
-        size = os.path.getsize(file_path)
+        size: int = os.path.getsize(file_path)
         logger.debug(f"File size for {file_path}: {size} bytes")
         return size
-    except Exception as e:
+    except OSError as e:
         logger.error(f"Error getting size of {file_path}: {e}")
+        logger.debug(traceback.format_exc())
         return None
 
 
@@ -148,24 +172,19 @@ def validate_pdf_file(file_path: str) -> bool:
     Returns:
         True if file exists and has .pdf extension, False otherwise
     """
-    try:
-        if not os.path.exists(file_path):
-            logger.warning(f"File does not exist: {file_path}")
-            return False
-
-        if get_file_extension(file_path) != '.pdf':
-            logger.warning(f"File is not a PDF: {file_path}")
-            return False
-
-        # Additional validation could be added here
-        # (e.g., checking magic number, file structure)
-
-        logger.info(f"PDF file validated: {file_path}")
-        return True
-
-    except Exception as e:
-        logger.error(f"Error validating PDF file {file_path}: {e}")
+    if not os.path.exists(file_path):
+        logger.warning(f"File does not exist: {file_path}")
         return False
+
+    if get_file_extension(file_path) != '.pdf':
+        logger.warning(f"File is not a PDF: {file_path}")
+        return False
+
+    # Additional validation could be added here
+    # (e.g., checking magic number, file structure)
+
+    logger.debug(f"PDF file validated: {file_path}")
+    return True
 
 
 def get_filename_without_extension(file_path: str) -> str:
@@ -183,6 +202,7 @@ def get_filename_without_extension(file_path: str) -> str:
         return os.path.splitext(filename)[0]
     except Exception as e:
         logger.error(f"Error getting filename without extension: {e}")
+        logger.debug(traceback.format_exc())
         return ""
 
 
@@ -207,11 +227,12 @@ def create_backup_file(original_path: str, backup_suffix: str = ".backup") -> Op
 
         # Write backup file
         if write_file_contents(backup_path, content):
-            logger.info(f"Backup created: {backup_path}")
+            logger.debug(f"Backup created: {backup_path}")
             return backup_path
         else:
             return None
 
     except Exception as e:
         logger.error(f"Error creating backup of {original_path}: {e}")
+        logger.debug(traceback.format_exc())
         return None
