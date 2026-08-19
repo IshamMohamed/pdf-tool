@@ -9,6 +9,7 @@ A simple tool for batch processing PDF files to create optimized, lower-quality 
 - **Quality control**: Adjustable DPI and JPEG quality settings
 - **Directory structure preservation**: Maintains the same folder structure in the output
 - **Non-destructive**: Creates new files in a separate directory without modifying originals
+- **Robust error handling**: Comprehensive logging and error handling for reliable operation
 
 ## Requirements
 
@@ -96,16 +97,15 @@ PDFTool/
 
 ### `utils.py`
 
-Contains helper functions for file operations:
+Contains helper functions for file operations with robust error handling and logging:
 - Directory creation and validation
-- File listing and filtering
-- File reading/writing
+- File listing and filtering by extension
+- File reading/writing with encoding support
 - PDF file validation
+- File size and extension utilities
 - Backup creation
 
-### `print_foo.py`
-
-A simple example script that prints "foo" to the console.
+This module is designed to be reusable across multiple projects.
 
 ## Tips for Best Results
 
@@ -121,6 +121,10 @@ A simple example script that prints "foo" to the console.
 - **Permission errors**: Ensure you have write access to the output directory
 - **Large files**: Processing very large PDFs may require more memory
 - **Corrupt PDFs**: Some PDFs may fail to process - check the error logs
+
+## Contributing
+
+Contributions are welcome! Please ensure your commits are signed using GPG for verification. See [GitHub's guide on commit signing](https://docs.github.com/en/authentication/managing-commit-signature-verification) for more information.
 
 ## License
 

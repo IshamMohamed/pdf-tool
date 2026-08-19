@@ -53,6 +53,22 @@ def compress_pdf_rasterize(
     if output_path.exists() and not overwrite:
         logger.info(f"Skipping existing output: {output_path}")
         return False
+    """
+    Rasterize `input_path` and save compressed PDF to `output_path`.
+
+    Args:
+        input_path: Path to input PDF file
+        output_path: Path to output PDF file
+        dpi: DPI for rasterization (lower = smaller file)
+        jpeg_quality: JPEG quality (1-100, lower = smaller file)
+        overwrite: Whether to overwrite existing output
+
+    Returns:
+        True on success, False on failure or skip
+    """
+    if output_path.exists() and not overwrite:
+        logger.info(f"Skipping existing output: {output_path}")
+        return False
 
     output_path.parent.mkdir(parents=True, exist_ok=True)
     logger.info(f"Processing: {input_path} -> {output_path} (dpi={dpi}, q={jpeg_quality})")
@@ -89,17 +105,13 @@ def compress_pdf_rasterize(
 
         try:
         # Convert compressed JPEG images into a single PDF
-        pdf_bytes = img2pdf.convert(images)
+        pdf_bytes: bytes = img2pdf.convert(images)
         if pdf_bytes is None:
             logger.error("Failed to convert images to PDF")
             return False
 
         with open(output_path, "wb") as f:
             f.write(pdf_bytes)
-    except (img2pdf.ImageOpenError, OSError) as e:
-        logger.error(f"Failed to write PDF {output_path}: {e}")
-        logger.debug(traceback.format_exc())
-        return False
 
         orig_size = input_path.stat().st_size
         new_size = output_path.stat().st_size
