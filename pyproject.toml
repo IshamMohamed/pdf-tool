@@ -22,7 +22,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pdf-tool = "main:main"
+pdf-tool = "pdf_tool.main:main"
 
 [project.urls]
 Homepage = "https://github.com/IshamMohamed/pdf-tool"

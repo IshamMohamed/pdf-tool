@@ -1,15 +1,26 @@
 # PDF Tool
 
-A simple tool for batch processing PDF files to create optimized, lower-quality versions suitable for archiving or sharing.
+A flexible tool for processing PDF files with different operations. Currently supports:
+- **Squeeze**: Rasterize and compress PDF files to reduce size
+
+The tool is designed with extensibility in mind, making it easy to add new operations in the future.
 
 ## Features
 
-- **Batch processing**: Convert all PDFs in a directory (and subdirectories) to optimized versions
-- **Rasterization**: Converts PDF pages to images and reassembles them for consistent compression
-- **Quality control**: Adjustable DPI and JPEG quality settings
+- **Operation-based architecture**: Use different operations for different PDF processing tasks
+- **Batch processing**: Process all PDFs in a directory (and subdirectories)
+- **Extensible design**: Easy to add new operations with their own parameters
 - **Directory structure preservation**: Maintains the same folder structure in the output
 - **Non-destructive**: Creates new files in a separate directory without modifying originals
 - **Robust error handling**: Comprehensive logging and error handling for reliable operation
+
+### Current Operations
+
+1. **Squeeze**: Rasterize and compress PDF files to reduce size
+   - Adjustable DPI for rasterization
+   - Adjustable JPEG quality
+   - Recursive directory processing
+   - Overwrite control
 
 ## Installation
 
@@ -53,9 +64,9 @@ pip install -r requirements.txt
 source venv/bin/activate  # On Windows use `venv\Scripts\activate`
 ```
 
-2. Run the tool:
+2. Run the tool with required operation and optional parameters:
 ```bash
-pdf-tool [OPTIONS]
+pdf-tool --operation OPERATION_NAME [GLOBAL_OPTIONS] [OPERATION_OPTIONS]
 ```
 
 ### Directory Structure
@@ -98,32 +109,46 @@ pdf-tool --input input_dir --output output_dir
 
 ## Usage
 
-### Basic Usage
+### Available Operations
+
+#### Squeeze Operation
+
+Rasterize and compress PDF files to reduce size.
 
 ```bash
-python pdf_tool.py
-```
-
-This will:
-1. Process all PDF files in the `Original/` directory (and subdirectories)
-2. Create optimized versions in the `Low/` directory with the same structure
-3. Use default settings (56 DPI, JPEG quality 30)
-
-### Advanced Options
-
-```bash
-python pdf_tool.py [OPTIONS]
+pdf-tool squeeze [OPTIONS]
 ```
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `--original`, `-i` | Source directory | `Original` |
-| `--low`, `-o` | Output directory | `Low` |
+| `--input`, `-i` | Source directory | `input` |
+| `--output`, `-o` | Output directory | `output` |
 | `--dpi` | Render DPI (lower = smaller files) | `56` |
 | `--quality`, `-q` | JPEG quality (1-100, lower = smaller) | `30` |
 | `--no-recursive` | Don't process subdirectories | `False` |
 | `--overwrite` | Overwrite existing output files | `False` |
 | `--debug` | Enable debug logging | `False` |
+
+**Example:**
+```bash
+pdf-tool squeeze --dpi 72 --quality 40 --overwrite
+```
+
+### Global Options
+
+These options apply to all commands:
+
+| Option | Description | Required | Default |
+|--------|-------------|----------|---------|
+| `--operation` | Operation to perform on PDF files | Yes | - |
+| `--input`, `-i` | Source directory | No | `input` |
+| `--output`, `-o` | Output directory | No | `output` |
+| `--debug` | Enable debug logging | No | `False` |
+
+**Example:**
+```bash
+pdf-tool --operation squeeze --input my_input --output my_output --dpi 72 --quality 40
+```
 
 **Example:**
 ```bash
@@ -135,7 +160,7 @@ python pdf_tool.py --dpi 72 --quality 40 --overwrite
 Before processing:
 ```
 PDFTool/
-├── Original/
+├── input/
 │   ├── document1.pdf
 │   ├── subfolder/
 │   │   └── document2.pdf
@@ -145,31 +170,52 @@ PDFTool/
 After processing:
 ```
 PDFTool/
-├── Original/
+├── input/
 │   ├── document1.pdf
 │   ├── subfolder/
 │   │   └── document2.pdf
 │   └── ...
-├── Low/
+├── output/
 │   ├── document1.pdf
 │   ├── subfolder/
 │   │   └── document2.pdf
 │   └── ...
 ```
 
-## Utility Scripts
+## Architecture
 
-### `utils.py`
+The PDF Tool uses a Strategy pattern to implement different operations:
 
-Contains helper functions for file operations with robust error handling and logging:
-- Directory creation and validation
-- File listing and filtering by extension
-- File reading/writing with encoding support
-- PDF file validation
-- File size and extension utilities
-- Backup creation
+1. **Base Operation Class**: Defines the interface for all operations
+2. **Operation Implementations**: Each operation is a separate class with its own parameters and logic
+3. **CLI Integration**: The command-line interface dynamically loads and executes operations
 
-This module is designed to be reusable across multiple projects.
+This design makes it easy to add new operations by:
+1. Creating a new operation class that inherits from the base `Operation` class
+2. Implementing the required methods (`add_arguments` and `execute`)
+3. Registering the operation in the CLI
+
+## Adding New Operations
+
+To add a new operation:
+
+1. Create a new file in `src/pdf_tool/operations/` (e.g., `my_operation.py`)
+2. Implement a class that inherits from `Operation`:
+   ```python
+   from pdf_tool.operations.base import Operation
+   
+   class MyOperation(Operation):
+       @classmethod
+       def add_arguments(cls, parser):
+           # Add operation-specific arguments
+           parser.add_argument('--my-param', type=int, default=10, help='My parameter')
+       
+       def execute(self, args):
+           # Implement operation logic
+           print(f"Running MyOperation with param: {args.my_param}")
+   ```
+3. Update the `get_operation_class` function in `main.py` to recognize the new operation
+4. The new operation will automatically be available in the CLI
 
 ## Tips for Best Results
 
