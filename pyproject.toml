@@ -1,0 +1,28 @@
+# PyProject configuration for PDF Tool
+# Modern Python standard (PEP 621)
+
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pdf-tool"
+version = "0.1.0"
+description = "A tool for PDF manipulation (compression, conversion, etc.)"
+authors = [{name = "Isham Mohamed"}]
+readme = "README.md"
+requires-python = ">=3.14"
+license = {text = "GPL-3.0"}
+
+# Dependencies (equivalent to requirements.txt)
+dependencies = [
+    "pymupdf>=1.22.0",  # PyMuPDF for PDF processing
+    "Pillow>=9.0.0",    # PIL for image manipulation
+    "img2pdf>=0.4.0",   # For converting images to PDF
+]
+
+[project.scripts]
+pdf-tool = "main:main"
+
+[project.urls]
+Homepage = "https://github.com/IshamMohamed/pdf-tool"
