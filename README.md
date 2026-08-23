@@ -11,14 +11,6 @@ A simple tool for batch processing PDF files to create optimized, lower-quality 
 - **Non-destructive**: Creates new files in a separate directory without modifying originals
 - **Robust error handling**: Comprehensive logging and error handling for reliable operation
 
-## Requirements
-
-- Python 3.7+
-- Dependencies (listed in `requirements.txt`):
-  - `pymupdf` (PyMuPDF)
-  - `Pillow` (PIL)
-  - `img2pdf`
-
 ## Installation
 
 ### Prerequisites
