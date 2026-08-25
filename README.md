@@ -1,241 +1,162 @@
 # PDF Tool
 
-A flexible tool for processing PDF files with different operations. Currently supports:
-- **Squeeze**: Rasterize and compress PDF files to reduce size
-
-The tool is designed with extensibility in mind, making it easy to add new operations in the future.
+A flexible command-line tool for processing PDF files with pluggable operations. Built with the Strategy pattern, it allows you to add new PDF-processing operations easily.
 
 ## Features
 
-- **Operation-based architecture**: Use different operations for different PDF processing tasks
-- **Batch processing**: Process all PDFs in a directory (and subdirectories)
-- **Extensible design**: Easy to add new operations with their own parameters
-- **Directory structure preservation**: Maintains the same folder structure in the output
-- **Non-destructive**: Creates new files in a separate directory without modifying originals
-- **Robust error handling**: Comprehensive logging and error handling for reliable operation
-
-### Current Operations
-
-1. **Squeeze**: Rasterize and compress PDF files to reduce size
-   - Adjustable DPI for rasterization
-   - Adjustable JPEG quality
-   - Recursive directory processing
-   - Overwrite control
+- Operation-based architecture: define each PDF-processing task as an independent, reusable strategy
+- Batch processing: process all PDFs in a directory (and subdirectories)
+- Extensible design: add new operations with minimal code changes
+- Directory structure preservation: output mirrors your input folder hierarchy
+- Non-destructive: writes new files to an output directory, leaving originals untouched
+- Robust logging: configurable debug output and error handling
 
 ## Installation
 
 ### Prerequisites
+
 - Python 3.14 or higher
 - pip
 
-### Set Up Virtual Environment
+### Using a Virtual Environment (Recommended)
+
 ```bash
 python3 -m venv venv
-source venv/bin/activate  # On Windows use `venv\Scripts\activate`
-```
-
-### Install Dependencies
-```bash
+source venv/bin/activate    # Windows: venv\Scripts\activate
 pip install -e .
 ```
 
-### Production Installation
+### Direct Install
 
-#### Option 1: Direct Installation (Recommended)
 ```bash
 pip install .
 ```
 
-#### Option 2: Using requirements.txt
-1. Generate pinned requirements:
-```bash
-pip install pip-tools
-pip-compile pyproject.toml
-```
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
 ## Usage
 
-1. Activate the virtual environment:
+All commands share these **global options**:
+
+| Option               | Description                        | Required | Default |
+|----------------------|------------------------------------|----------|---------|
+| `--operation NAME`   | Name of the operation to execute   | Yes      | —       |
+| `--input, -i DIR`    | Source directory                   | No       | `input` |
+| `--output, -o DIR`   | Output directory                   | No       | `output`|
+| `--debug`            | Enable debug (verbose) logging     | No       | `False` |
+
+To see available operations:
+
 ```bash
-source venv/bin/activate  # On Windows use `venv\Scripts\activate`
+pdf-tool --help
 ```
 
-2. Run the tool with required operation and optional parameters:
-```bash
-pdf-tool --operation OPERATION_NAME [GLOBAL_OPTIONS] [OPERATION_OPTIONS]
-```
-
-### Directory Structure
-
-The tool preserves the directory structure from the input directory to the output directory.
-
-#### Default Directories:
-
-Before processing:
-```
-PDFTool/
-├── input/
-│   ├── document1.pdf
-│   ├── subfolder/
-│   │   └── document2.pdf
-│   └── ...
-```
-
-After processing:
-```
-PDFTool/
-├── input/
-│   ├── document1.pdf
-│   ├── subfolder/
-│   │   └── document2.pdf
-│   └── ...
-├── output/
-│   ├── document1.pdf
-│   ├── subfolder/
-│   │   └── document2.pdf
-│   └── ...
-```
-
-#### Custom Directories:
-
-You can specify custom input and output directories using the `--input` and `--output` options:
-```bash
-pdf-tool --input input_dir --output output_dir
-```
-
-## Usage
-
-### Available Operations
-
-#### Squeeze Operation
+### Squeeze Operation
 
 Rasterize and compress PDF files to reduce size.
 
 ```bash
-pdf-tool squeeze [OPTIONS]
+pdf-tool --operation squeeze [OPTIONS]
 ```
 
-| Option | Description | Default |
-|--------|-------------|---------|
-| `--input`, `-i` | Source directory | `input` |
-| `--output`, `-o` | Output directory | `output` |
-| `--dpi` | Render DPI (lower = smaller files) | `56` |
-| `--quality`, `-q` | JPEG quality (1-100, lower = smaller) | `30` |
-| `--no-recursive` | Don't process subdirectories | `False` |
-| `--overwrite` | Overwrite existing output files | `False` |
-| `--debug` | Enable debug logging | `False` |
+| Option               | Description                             | Default |
+|----------------------|-----------------------------------------|---------|
+| `--dpi DPI`          | Render density in DPI (lower=smaller)   | `56`    |
+| `--quality, -q Q`    | JPEG quality (1–100, lower=smaller)     | `30`    |
+| `--no-recursive`     | Disable recursion into subdirectories   | `False` |
+| `--overwrite`        | Overwrite existing files in output      | `False` |
 
-**Example:**
+**Example**
+
 ```bash
-pdf-tool squeeze --dpi 72 --quality 40 --overwrite
+# Compress PDFs in ./input, write to ./output with higher DPI
+pdf-tool --operation squeeze --input ./input --output ./output --dpi 72 --quality 40 --debug
 ```
 
-### Global Options
+#### Tips for Squeeze Operation
 
-These options apply to all commands:
+- Start with defaults: `--dpi 56`, `--quality 30`.
+- Higher DPI (72–150) preserves more detail but increases file size.
+- Lower quality (10–30) reduces size but may introduce artifacts.
+- For text-heavy PDFs, a higher DPI helps maintain readability.
+- For image-heavy PDFs, you can often use lower DPI without noticeable quality loss.
 
-| Option | Description | Required | Default |
-|--------|-------------|----------|---------|
-| `--operation` | Operation to perform on PDF files | Yes | - |
-| `--input`, `-i` | Source directory | No | `input` |
-| `--output`, `-o` | Output directory | No | `output` |
-| `--debug` | Enable debug logging | No | `False` |
+#### Troubleshooting Squeeze Operation
 
-**Example:**
-```bash
-pdf-tool --operation squeeze --input my_input --output my_output --dpi 72 --quality 40
-```
+- Permission errors: Ensure you have write access to the output directory.
+- Large PDFs: Processing very large files may require more memory/time. Use `--debug` to inspect logs.
+- Corrupt PDFs: Some files may fail to open or process. Check error messages in debug mode.
 
-**Example:**
-```bash
-python pdf_tool.py --dpi 72 --quality 40 --overwrite
-```
+## Directory Structure
 
-### Directory Structure
+- Input directory:
+  ```
+  input/
+  ├── file1.pdf
+  └── subdir/
+      └── file2.pdf
+  ```
 
-Before processing:
-```
-PDFTool/
-├── input/
-│   ├── document1.pdf
-│   ├── subfolder/
-│   │   └── document2.pdf
-│   └── ...
-```
-
-After processing:
-```
-PDFTool/
-├── input/
-│   ├── document1.pdf
-│   ├── subfolder/
-│   │   └── document2.pdf
-│   └── ...
-├── output/
-│   ├── document1.pdf
-│   ├── subfolder/
-│   │   └── document2.pdf
-│   └── ...
-```
+- Output directory (after squeeze):
+  ```
+  output/
+  ├── file1.pdf
+  └── subdir/
+      └── file2.pdf
+  ```
 
 ## Architecture
 
-The PDF Tool uses a Strategy pattern to implement different operations:
+The Tool uses a Strategy pattern for operations:
 
-1. **Base Operation Class**: Defines the interface for all operations
-2. **Operation Implementations**: Each operation is a separate class with its own parameters and logic
-3. **CLI Integration**: The command-line interface dynamically loads and executes operations
+1. **Base Operation class** defines the contract (`add_arguments`, `execute`).
+2. **Concrete Operations** (e.g., `SqueezeOperation`) live in `src/pdf_tool/operations/`.
+3. **CLI** in `src/pdf_tool/main.py` dynamically discovers and invokes operations.
 
-This design makes it easy to add new operations by:
-1. Creating a new operation class that inherits from the base `Operation` class
-2. Implementing the required methods (`add_arguments` and `execute`)
-3. Registering the operation in the CLI
+### Adding a New Operation
 
-## Adding New Operations
-
-To add a new operation:
-
-1. Create a new file in `src/pdf_tool/operations/` (e.g., `my_operation.py`)
-2. Implement a class that inherits from `Operation`:
+1. Create `src/pdf_tool/operations/my_operation.py`:
    ```python
    from pdf_tool.operations.base import Operation
-   
+
    class MyOperation(Operation):
        @classmethod
        def add_arguments(cls, parser):
-           # Add operation-specific arguments
-           parser.add_argument('--my-param', type=int, default=10, help='My parameter')
-       
+           parser.add_argument('--foo', type=int, default=1, help='Example param')
+
        def execute(self, args):
-           # Implement operation logic
-           print(f"Running MyOperation with param: {args.my_param}")
+           print(f"Running MyOperation with foo={args.foo}")
    ```
-3. Update the `get_operation_class` function in `main.py` to recognize the new operation
-4. The new operation will automatically be available in the CLI
+2. Register it in `get_operation_class` in `main.py`:
+   ```python
+   def get_operation_class(name):
+       if name == 'squeeze':
+           from pdf_tool.operations.squeeze import SqueezeOperation
+           return SqueezeOperation
+       elif name == 'myop':
+           from pdf_tool.operations.my_operation import MyOperation
+           return MyOperation
+       else:
+           raise ValueError(f"Unknown operation: {name}")
+   ```
 
-## Tips for Best Results
+3. Run it:
+   ```bash
+   pdf-tool --operation myop --foo 42
+   ```
 
-1. **Start with default settings** (56 DPI, quality 30) and adjust as needed
-2. **Higher DPI** (72-150) preserves more detail but creates larger files
-3. **Lower quality** (10-30) creates smaller files but may introduce artifacts
-4. **For text-heavy PDFs**, you may need higher DPI to maintain readability
-5. **For image-heavy PDFs**, you can often use lower DPI without noticeable quality loss
+
 
 ## Troubleshooting
 
-- **Missing dependencies**: Run `pip install -r requirements.txt`
-- **Permission errors**: Ensure you have write access to the output directory
-- **Large files**: Processing very large PDFs may require more memory
-- **Corrupt PDFs**: Some PDFs may fail to process - check the error logs
+These general tips address common issues across operations:
+
+- **Permissions**: Ensure you have write access to the output directory.
+- **Large PDFs**: Processing very large files may require more memory or time. Use `--debug` to inspect logs.
+- **Corrupt PDFs**: Some files may fail to open or process. Check error messages in debug mode.
 
 ## Contributing
 
-Contributions are welcome! Please ensure your commits are signed using GPG for verification. See [GitHub's guide on commit signing](https://docs.github.com/en/authentication/managing-commit-signature-verification) for more information.
+Contributions welcome! Please fork, sign your commits, and open a PR.
 
 ## License
 
-This project is open source and available under the [GPL-3.0 License](https://www.gnu.org/licenses/gpl-3.0.html).
+GPL-3.0 © Isham Mohamed
