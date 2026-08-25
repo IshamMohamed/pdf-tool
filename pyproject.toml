@@ -16,12 +16,14 @@ license = {text = "GPL-3.0"}
 
 # Dependencies (equivalent to requirements.txt)
 dependencies = [
+    "PyQt5>=5.15.0",  # PyQt for GUI
     "pymupdf>=1.22.0",  # PyMuPDF for PDF processing
     "Pillow>=9.0.0",    # PIL for image manipulation
     "img2pdf>=0.4.0",   # For converting images to PDF
 ]
 
 [project.scripts]
+pdf-tool-gui = "pdf_tool.gui:main"
 pdf-tool = "pdf_tool.main:main"
 
 [project.urls]

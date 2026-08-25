@@ -85,6 +85,21 @@ pdf-tool --operation squeeze --input ./input --output ./output --dpi 72 --qualit
 - Large PDFs: Processing very large files may require more memory/time. Use `--debug` to inspect logs.
 - Corrupt PDFs: Some files may fail to open or process. Check error messages in debug mode.
 
+## GUI Interface
+
+A PyQt5-based graphical interface for the PDF Tool. It provides common input/output folder selectors and a tabbed UI for each supported operation.
+
+Launch the GUI after installing:
+```bash
+pdf-tool-gui
+```
+or via Python module:
+```bash
+python -m pdf_tool.gui
+```
+
+Use the GUI to select input and output folders, switch between operations using tabs, configure parameters, and run.
+
 ## Directory Structure
 
 - Input directory:
