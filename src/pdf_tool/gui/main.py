@@ -1,122 +1,159 @@
 import sys
 from pathlib import Path
 from PyQt5.QtWidgets import (
-    QApplication, QMainWindow, QWidget, QTabWidget,
-    QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, QPushButton,
-    QFileDialog, QSpinBox, QCheckBox, QMessageBox
+    QApplication, QMainWindow, QWidget,
+    QFormLayout, QLabel, QLineEdit, QPushButton, QFileDialog,
+    QTabWidget, QVBoxLayout, QHBoxLayout, QSpinBox, QCheckBox,
+    QTextEdit, QProgressBar, QMessageBox
 )
 from PyQt5.QtCore import Qt
-from pdf_tool.operations.squeeze import SqueezeOperation
+from .worker import SqueezeWorker
 
 
 class MainWindow(QMainWindow):
+    """
+    PDF Tool GUI: select folders, configure operations, and view logs.
+    """
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("PDF Tool")
-        self.resize(600, 400)
+        self.setWindowTitle("PDF Tool GUI")
+        self.resize(800, 600)
 
+        # Central widget
         central = QWidget()
         self.setCentralWidget(central)
-        layout = QVBoxLayout(central)
+        main_layout = QVBoxLayout(central)
 
         # Input/output selectors
-        io_layout = QHBoxLayout()
-        layout.addLayout(io_layout)
-
-        io_layout.addWidget(QLabel("Input Folder:"))
+        form = QFormLayout()
+        main_layout.addLayout(form)
         self.input_edit = QLineEdit(str(Path("input").absolute()))
-        io_layout.addWidget(self.input_edit)
-        input_btn = QPushButton("Browse")
-        input_btn.clicked.connect(self.browse_input)
-        io_layout.addWidget(input_btn)
-
-        io_layout.addWidget(QLabel("Output Folder:"))
+        form.addRow(QLabel("Input Folder:"), self._folder_selector(self.input_edit, self.browse_input))
         self.output_edit = QLineEdit(str(Path("output").absolute()))
-        io_layout.addWidget(self.output_edit)
-        output_btn = QPushButton("Browse")
-        output_btn.clicked.connect(self.browse_output)
-        io_layout.addWidget(output_btn)
+        form.addRow(QLabel("Output Folder:"), self._folder_selector(self.output_edit, self.browse_output))
 
-        # Tabs
+        # Tabs for operations
         self.tabs = QTabWidget()
-        layout.addWidget(self.tabs)
+        main_layout.addWidget(self.tabs)
+        self.tabs.addTab(self._create_squeeze_tab(), "Squeeze")
 
-        self.tabs.addTab(self.create_squeeze_tab(), "Squeeze")
+        # Progress and log
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setVisible(False)
+        main_layout.addWidget(self.progress_bar)
+
+        self.log_view = QTextEdit()
+        self.log_view.setReadOnly(True)
+        self.log_view.setPlaceholderText("Operation logs...")
+        self.log_view.setVisible(False)
+        main_layout.addWidget(self.log_view)
+
+        # Thread worker
+        self.worker = None
+
+    def _folder_selector(self, line_edit: QLineEdit, callback) -> QWidget:
+        widget = QWidget()
+        h = QHBoxLayout(widget)
+        h.setContentsMargins(0, 0, 0, 0)
+        line_edit.setMinimumWidth(400)
+        h.addWidget(line_edit)
+        btn = QPushButton("Browse")
+        btn.setFixedWidth(80)
+        btn.clicked.connect(callback)
+        h.addWidget(btn)
+        return widget
 
     def browse_input(self):
-        directory = QFileDialog.getExistingDirectory(self, "Select Input Folder", self.input_edit.text())
-        if directory:
-            self.input_edit.setText(directory)
+        path = QFileDialog.getExistingDirectory(self, "Select Input Folder", self.input_edit.text())
+        if path:
+            self.input_edit.setText(path)
 
     def browse_output(self):
-        directory = QFileDialog.getExistingDirectory(self, "Select Output Folder", self.output_edit.text())
-        if directory:
-            self.output_edit.setText(directory)
+        path = QFileDialog.getExistingDirectory(self, "Select Output Folder", self.output_edit.text())
+        if path:
+            self.output_edit.setText(path)
 
-    def create_squeeze_tab(self):
+    def _create_squeeze_tab(self) -> QWidget:
         tab = QWidget()
-        l = QVBoxLayout(tab)
+        v = QVBoxLayout(tab)
 
         # DPI
-        dpi_layout = QHBoxLayout()
-        dpi_layout.addWidget(QLabel("DPI:"))
+        h1 = QHBoxLayout()
+        h1.addWidget(QLabel("DPI:"))
         self.dpi_spin = QSpinBox()
-        self.dpi_spin.setRange(1, 600)
+        self.dpi_spin.setRange(10, 300)
         self.dpi_spin.setValue(56)
-        dpi_layout.addWidget(self.dpi_spin)
-        l.addLayout(dpi_layout)
+        h1.addWidget(self.dpi_spin)
+        v.addLayout(h1)
 
         # Quality
-        q_layout = QHBoxLayout()
-        q_layout.addWidget(QLabel("Quality:"))
+        h2 = QHBoxLayout()
+        h2.addWidget(QLabel("JPEG Quality:"))
         self.quality_spin = QSpinBox()
         self.quality_spin.setRange(1, 100)
         self.quality_spin.setValue(30)
-        q_layout.addWidget(self.quality_spin)
-        l.addLayout(q_layout)
+        h2.addWidget(self.quality_spin)
+        v.addLayout(h2)
 
         # Options
         self.no_recursive_cb = QCheckBox("No Recursive")
-        l.addWidget(self.no_recursive_cb)
-        self.overwrite_cb = QCheckBox("Overwrite")
-        l.addWidget(self.overwrite_cb)
+        v.addWidget(self.no_recursive_cb)
+        self.overwrite_cb = QCheckBox("Overwrite Existing")
+        v.addWidget(self.overwrite_cb)
 
-        # Run button
-        run_btn = QPushButton("Run")
-        run_btn.clicked.connect(self.run_squeeze)
-        l.addWidget(run_btn, alignment=Qt.AlignRight)
+        # Spacer
+        v.addStretch()
+
+        # Run
+        btn_h = QHBoxLayout()
+        btn_h.addStretch()
+        self.run_btn = QPushButton("Run Squeeze")
+        self.run_btn.clicked.connect(self.run_squeeze)
+        btn_h.addWidget(self.run_btn)
+        v.addLayout(btn_h)
 
         return tab
 
     def run_squeeze(self):
-        input_dir = Path(self.input_edit.text())
-        output_dir = Path(self.output_edit.text())
+        # Prepare UI
+        self.progress_bar.setRange(0, 0)
+        self.progress_bar.setVisible(True)
+        self.log_view.clear()
+        self.log_view.setVisible(True)
+        self.run_btn.setEnabled(False)
+
+        # Collect parameters
+        inp = Path(self.input_edit.text())
+        out = Path(self.output_edit.text())
         dpi = self.dpi_spin.value()
         quality = self.quality_spin.value()
         recursive = not self.no_recursive_cb.isChecked()
         overwrite = self.overwrite_cb.isChecked()
 
-        try:
-            operation = SqueezeOperation()
-            operation.process_directory(
-                input_dir=input_dir,
-                output_dir=output_dir,
-                dpi=dpi,
-                jpeg_quality=quality,
-                recursive=recursive,
-                overwrite=overwrite
-            )
-            QMessageBox.information(self, "Success", "Squeeze operation completed.")
-        except Exception as e:
-            QMessageBox.critical(self, "Error", f"An error occurred:\n{e}")
+        # Start worker
+        self.worker = SqueezeWorker(inp, out, dpi, quality, recursive, overwrite)
+        self.worker.log_signal.connect(self.log_view.append)
+        self.worker.finished_signal.connect(self._on_finished)
+        self.worker.error_signal.connect(self._on_error)
+        self.worker.start()
+
+    def _on_finished(self):
+        self.progress_bar.setVisible(False)
+        self.run_btn.setEnabled(True)
+        QMessageBox.information(self, "Done", "Squeeze operation completed.")
+
+    def _on_error(self, message):
+        self.progress_bar.setVisible(False)
+        self.run_btn.setEnabled(True)
+        QMessageBox.critical(self, "Error", f"Operation failed:\n{message}")
 
 
 def main():
     app = QApplication(sys.argv)
-    window = MainWindow()
-    window.show()
+    win = MainWindow()
+    win.show()
     sys.exit(app.exec_())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
