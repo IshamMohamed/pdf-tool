@@ -23,6 +23,9 @@ def get_operation_class(operation_name: str):
     if operation_name == "squeeze":
         from pdf_tool.operations.squeeze import SqueezeOperation
         return SqueezeOperation
+    elif operation_name == "merge":
+        from pdf_tool.operations.merge import MergeOperation
+        return MergeOperation
     else:
         raise ValueError(f"Unknown operation: {operation_name}")
 
@@ -52,17 +55,23 @@ def main() -> None:
         required=True,
         help="Operation to perform on PDF files"
     )
-    
+
     # Add operations
     squeeze_parser = subparsers.add_parser(
-        "squeeze", 
+        "squeeze",
         help="Rasterize and compress PDF files to reduce size"
     )
-    
-    # Get all operation classes and add their arguments
     SqueezeOperation = get_operation_class("squeeze")
     SqueezeOperation.add_arguments(squeeze_parser)
-    
+
+    # Add merge operation
+    merge_parser = subparsers.add_parser(
+        "merge",
+        help="Merge PDF files into a single PDF"
+    )
+    MergeOperation = get_operation_class("merge")
+    MergeOperation.add_arguments(merge_parser)
+
     args = parser.parse_args()
 
     if args.debug:

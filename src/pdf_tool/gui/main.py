@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (
     QTextEdit, QProgressBar, QMessageBox
 )
 from PyQt5.QtCore import Qt
-from .worker import SqueezeWorker
+from .worker import SqueezeWorker, MergeWorker
 
 
 class MainWindow(QMainWindow):
@@ -36,6 +36,7 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         main_layout.addWidget(self.tabs)
         self.tabs.addTab(self._create_squeeze_tab(), "Squeeze")
+        self.tabs.addTab(self._create_merge_tab(), "Merge")
 
         # Progress and log
         self.progress_bar = QProgressBar()
@@ -48,7 +49,7 @@ class MainWindow(QMainWindow):
         self.log_view.setVisible(False)
         main_layout.addWidget(self.log_view)
 
-        # Thread worker
+        # Thread worker reference
         self.worker = None
 
     def _folder_selector(self, line_edit: QLineEdit, callback) -> QWidget:
@@ -145,6 +146,60 @@ class MainWindow(QMainWindow):
     def _on_error(self, message):
         self.progress_bar.setVisible(False)
         self.run_btn.setEnabled(True)
+        QMessageBox.critical(self, "Error", f"Operation failed:\n{message}")
+
+    def _create_merge_tab(self) -> QWidget:
+        tab = QWidget()
+        v = QVBoxLayout(tab)
+
+        # Output file name
+        h1 = QHBoxLayout()
+        h1.addWidget(QLabel("Output File Name:"))
+        self.merge_filename_edit = QLineEdit("merged-{timestamp}.pdf")
+        h1.addWidget(self.merge_filename_edit)
+        v.addLayout(h1)
+
+        # Spacer
+        v.addStretch()
+
+        # Run button
+        btn_h = QHBoxLayout()
+        btn_h.addStretch()
+        self.run_merge_btn = QPushButton("Run Merge")
+        self.run_merge_btn.clicked.connect(self.run_merge)
+        btn_h.addWidget(self.run_merge_btn)
+        v.addLayout(btn_h)
+
+        return tab
+
+    def run_merge(self):
+        # Prepare UI
+        self.progress_bar.setRange(0, 0)
+        self.progress_bar.setVisible(True)
+        self.log_view.clear()
+        self.log_view.setVisible(True)
+        self.run_merge_btn.setEnabled(False)
+
+        # Collect parameters
+        inp = Path(self.input_edit.text())
+        out = Path(self.output_edit.text())
+        filename = self.merge_filename_edit.text()
+
+        # Start worker
+        self.worker = MergeWorker(inp, out, filename)
+        self.worker.log_signal.connect(self.log_view.append)
+        self.worker.finished_signal.connect(self._on_merge_finished)
+        self.worker.error_signal.connect(self._on_merge_error)
+        self.worker.start()
+
+    def _on_merge_finished(self):
+        self.progress_bar.setVisible(False)
+        self.run_merge_btn.setEnabled(True)
+        QMessageBox.information(self, "Done", "Merge operation completed.")
+
+    def _on_merge_error(self, message):
+        self.progress_bar.setVisible(False)
+        self.run_merge_btn.setEnabled(True)
         QMessageBox.critical(self, "Error", f"Operation failed:\n{message}")
 
 
