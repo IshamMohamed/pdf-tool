@@ -85,6 +85,26 @@ pdf-tool --operation squeeze --input ./input --output ./output --dpi 72 --qualit
 - Large PDFs: Processing very large files may require more memory/time. Use `--debug` to inspect logs.
 - Corrupt PDFs: Some files may fail to open or process. Check error messages in debug mode.
 
+### Merge Operation
+
+Merge all PDF files in the specified input directory (non-recursive) into a single PDF.
+
+```bash
+pdf-tool --operation merge [OPTIONS]
+```
+
+| Option                  | Description                                                       | Default                   |
+|-------------------------|-------------------------------------------------------------------|---------------------------|
+| `--file-name NAME`      | Output merged PDF file name. Supports `{timestamp}` placeholder.  | `merged-{timestamp}.pdf` |
+
+**Example**
+```bash
+# Merge all PDFs in ./input into a single file in ./output
+pdf-tool --operation merge --input ./input --output ./output --file-name "all-in-one-{timestamp}.pdf"
+```
+
+Use `{timestamp}` to embed the current date/time (formatted `YYYYMMDD-HHMMSS`) in the filename.
+
 ## GUI Interface
 
 A PyQt5-based graphical interface for the PDF Tool. It provides common input/output folder selectors and a tabbed UI for each supported operation.
